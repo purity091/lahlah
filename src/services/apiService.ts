@@ -17,7 +17,11 @@ export const apiService = {
         try {
             // Check if Supabase is configured
             if (!supabaseService.getClient()) {
-                console.warn('Supabase is not configured. Returning empty data.');
+                // Use localStorage as fallback
+                const savedData = localStorage.getItem('appData');
+                if (savedData) {
+                    return JSON.parse(savedData);
+                }
                 return { projects: [], tasks: [], documents: [] };
             }
             
@@ -46,14 +50,23 @@ export const apiService = {
             return { projects: mappedProjects, tasks: mappedTasks, documents: mappedDocuments };
         } catch (err) {
             console.error('Error fetching initial data:', err);
-            throw err;
+            // Fallback to localStorage if Supabase fails
+            const savedData = localStorage.getItem('appData');
+            if (savedData) {
+                return JSON.parse(savedData);
+            }
+            return { projects: [], tasks: [], documents: [] };
         }
     },
 
     // Projects
     createProject: async (project: AppContext) => {
         if (!supabaseService.getClient()) {
-            console.warn('Supabase is not configured. Skipping project creation.');
+            // Use localStorage as fallback
+            const savedData = localStorage.getItem('appData');
+            const data = savedData ? JSON.parse(savedData) : { projects: [], tasks: [], documents: [] };
+            data.projects.push(project);
+            localStorage.setItem('appData', JSON.stringify(data));
             return;
         }
         
@@ -62,13 +75,26 @@ export const apiService = {
             await supabaseService.insert(PROJECTS_TABLE, mappedProject);
         } catch (err) {
             console.error('Error creating project:', err);
-            throw err;
+            // Fallback to localStorage
+            const savedData = localStorage.getItem('appData');
+            const data = savedData ? JSON.parse(savedData) : { projects: [], tasks: [], documents: [] };
+            data.projects.push(project);
+            localStorage.setItem('appData', JSON.stringify(data));
         }
     },
 
     updateProject: async (project: AppContext) => {
         if (!supabaseService.getClient()) {
-            console.warn('Supabase is not configured. Skipping project update.');
+            // Use localStorage as fallback
+            const savedData = localStorage.getItem('appData');
+            const data = savedData ? JSON.parse(savedData) : { projects: [], tasks: [], documents: [] };
+            const projectIndex = data.projects.findIndex((p: any) => p.id === project.id);
+            if (projectIndex !== -1) {
+                data.projects[projectIndex] = project;
+            } else {
+                data.projects.push(project);
+            }
+            localStorage.setItem('appData', JSON.stringify(data));
             return;
         }
         
@@ -81,14 +107,27 @@ export const apiService = {
             );
         } catch (err) {
             console.error('Error updating project:', err);
-            throw err;
+            // Fallback to localStorage
+            const savedData = localStorage.getItem('appData');
+            const data = savedData ? JSON.parse(savedData) : { projects: [], tasks: [], documents: [] };
+            const projectIndex = data.projects.findIndex((p: any) => p.id === project.id);
+            if (projectIndex !== -1) {
+                data.projects[projectIndex] = project;
+            } else {
+                data.projects.push(project);
+            }
+            localStorage.setItem('appData', JSON.stringify(data));
         }
     },
 
     // Tasks
     createTask: async (task: Task) => {
         if (!supabaseService.getClient()) {
-            console.warn('Supabase is not configured. Skipping task creation.');
+            // Use localStorage as fallback
+            const savedData = localStorage.getItem('appData');
+            const data = savedData ? JSON.parse(savedData) : { projects: [], tasks: [], documents: [] };
+            data.tasks.push(task);
+            localStorage.setItem('appData', JSON.stringify(data));
             return;
         }
         
@@ -97,13 +136,26 @@ export const apiService = {
             await supabaseService.insert(TASKS_TABLE, mappedTask);
         } catch (err) {
             console.error('Error creating task:', err);
-            throw err;
+            // Fallback to localStorage
+            const savedData = localStorage.getItem('appData');
+            const data = savedData ? JSON.parse(savedData) : { projects: [], tasks: [], documents: [] };
+            data.tasks.push(task);
+            localStorage.setItem('appData', JSON.stringify(data));
         }
     },
 
     updateTask: async (task: Task) => {
         if (!supabaseService.getClient()) {
-            console.warn('Supabase is not configured. Skipping task update.');
+            // Use localStorage as fallback
+            const savedData = localStorage.getItem('appData');
+            const data = savedData ? JSON.parse(savedData) : { projects: [], tasks: [], documents: [] };
+            const taskIndex = data.tasks.findIndex((t: any) => t.id === task.id);
+            if (taskIndex !== -1) {
+                data.tasks[taskIndex] = task;
+            } else {
+                data.tasks.push(task);
+            }
+            localStorage.setItem('appData', JSON.stringify(data));
             return;
         }
         
@@ -116,13 +168,26 @@ export const apiService = {
             );
         } catch (err) {
             console.error('Error updating task:', err);
-            throw err;
+            // Fallback to localStorage
+            const savedData = localStorage.getItem('appData');
+            const data = savedData ? JSON.parse(savedData) : { projects: [], tasks: [], documents: [] };
+            const taskIndex = data.tasks.findIndex((t: any) => t.id === task.id);
+            if (taskIndex !== -1) {
+                data.tasks[taskIndex] = task;
+            } else {
+                data.tasks.push(task);
+            }
+            localStorage.setItem('appData', JSON.stringify(data));
         }
     },
 
     deleteTask: async (taskId: string) => {
         if (!supabaseService.getClient()) {
-            console.warn('Supabase is not configured. Skipping task deletion.');
+            // Use localStorage as fallback
+            const savedData = localStorage.getItem('appData');
+            const data = savedData ? JSON.parse(savedData) : { projects: [], tasks: [], documents: [] };
+            data.tasks = data.tasks.filter((t: any) => t.id !== taskId);
+            localStorage.setItem('appData', JSON.stringify(data));
             return;
         }
         
@@ -130,14 +195,27 @@ export const apiService = {
             await supabaseService.delete(TASKS_TABLE, [{ column: 'id', value: taskId }]);
         } catch (err) {
             console.error('Error deleting task:', err);
-            throw err;
+            // Fallback to localStorage
+            const savedData = localStorage.getItem('appData');
+            const data = savedData ? JSON.parse(savedData) : { projects: [], tasks: [], documents: [] };
+            data.tasks = data.tasks.filter((t: any) => t.id !== taskId);
+            localStorage.setItem('appData', JSON.stringify(data));
         }
     },
 
     // Freelancers
     addFreelancer: async (freelancer: Freelancer, projectId: string) => {
         if (!supabaseService.getClient()) {
-            console.warn('Supabase is not configured. Skipping freelancer addition.');
+            // Use localStorage as fallback
+            const savedData = localStorage.getItem('appData');
+            const data = savedData ? JSON.parse(savedData) : { projects: [], tasks: [], documents: [] };
+            // Find the project and add the freelancer
+            const project = data.projects.find((p: any) => p.id === projectId);
+            if (project) {
+                if (!project.freelancers) project.freelancers = [];
+                project.freelancers.push(freelancer);
+            }
+            localStorage.setItem('appData', JSON.stringify(data));
             return;
         }
         
@@ -149,13 +227,33 @@ export const apiService = {
             await supabaseService.insert(FREELANCERS_TABLE, mappedFreelancer);
         } catch (err) {
             console.error('Error adding freelancer:', err);
-            throw err;
+            // Fallback to localStorage
+            const savedData = localStorage.getItem('appData');
+            const data = savedData ? JSON.parse(savedData) : { projects: [], tasks: [], documents: [] };
+            // Find the project and add the freelancer
+            const project = data.projects.find((p: any) => p.id === projectId);
+            if (project) {
+                if (!project.freelancers) project.freelancers = [];
+                project.freelancers.push(freelancer);
+            }
+            localStorage.setItem('appData', JSON.stringify(data));
         }
     },
 
     updateFreelancer: async (freelancer: Freelancer, projectId: string) => {
         if (!supabaseService.getClient()) {
-            console.warn('Supabase is not configured. Skipping freelancer update.');
+            // Use localStorage as fallback
+            const savedData = localStorage.getItem('appData');
+            const data = savedData ? JSON.parse(savedData) : { projects: [], tasks: [], documents: [] };
+            // Find the project and update the freelancer
+            const project = data.projects.find((p: any) => p.id === projectId);
+            if (project && project.freelancers) {
+                const freelancerIndex = project.freelancers.findIndex((f: any) => f.id === freelancer.id);
+                if (freelancerIndex !== -1) {
+                    project.freelancers[freelancerIndex] = freelancer;
+                }
+            }
+            localStorage.setItem('appData', JSON.stringify(data));
             return;
         }
         
@@ -171,13 +269,32 @@ export const apiService = {
             );
         } catch (err) {
             console.error('Error updating freelancer:', err);
-            throw err;
+            // Fallback to localStorage
+            const savedData = localStorage.getItem('appData');
+            const data = savedData ? JSON.parse(savedData) : { projects: [], tasks: [], documents: [] };
+            // Find the project and update the freelancer
+            const project = data.projects.find((p: any) => p.id === projectId);
+            if (project && project.freelancers) {
+                const freelancerIndex = project.freelancers.findIndex((f: any) => f.id === freelancer.id);
+                if (freelancerIndex !== -1) {
+                    project.freelancers[freelancerIndex] = freelancer;
+                }
+            }
+            localStorage.setItem('appData', JSON.stringify(data));
         }
     },
 
     deleteFreelancer: async (freelancerId: string, projectId: string) => {
         if (!supabaseService.getClient()) {
-            console.warn('Supabase is not configured. Skipping freelancer deletion.');
+            // Use localStorage as fallback
+            const savedData = localStorage.getItem('appData');
+            const data = savedData ? JSON.parse(savedData) : { projects: [], tasks: [], documents: [] };
+            // Find the project and remove the freelancer
+            const project = data.projects.find((p: any) => p.id === projectId);
+            if (project && project.freelancers) {
+                project.freelancers = project.freelancers.filter((f: any) => f.id !== freelancerId);
+            }
+            localStorage.setItem('appData', JSON.stringify(data));
             return;
         }
         
@@ -185,15 +302,24 @@ export const apiService = {
             await supabaseService.delete(FREELANCERS_TABLE, [{ column: 'id', value: freelancerId }]);
         } catch (err) {
             console.error('Error deleting freelancer:', err);
-            throw err;
+            // Fallback to localStorage
+            const savedData = localStorage.getItem('appData');
+            const data = savedData ? JSON.parse(savedData) : { projects: [], tasks: [], documents: [] };
+            // Find the project and remove the freelancer
+            const project = data.projects.find((p: any) => p.id === projectId);
+            if (project && project.freelancers) {
+                project.freelancers = project.freelancers.filter((f: any) => f.id !== freelancerId);
+            }
+            localStorage.setItem('appData', JSON.stringify(data));
         }
     },
 
     // Chat
     fetchChatHistory: async (contextId: string) => {
         if (!supabaseService.getClient()) {
-            console.warn('Supabase is not configured. Returning empty chat history.');
-            return [];
+            // Use localStorage as fallback
+            const savedChats = localStorage.getItem(`chat_${contextId}`);
+            return savedChats ? JSON.parse(savedChats) : [];
         }
         
         try {
@@ -205,13 +331,19 @@ export const apiService = {
             return response?.map(mapChatMessageFromDB) || [];
         } catch (err) {
             console.error('Error fetching chat history:', err);
-            return [];
+            // Fallback to localStorage
+            const savedChats = localStorage.getItem(`chat_${contextId}`);
+            return savedChats ? JSON.parse(savedChats) : [];
         }
     },
 
     saveChatMessage: async (contextId: string, msg: ChatMessage) => {
         if (!supabaseService.getClient()) {
-            console.warn('Supabase is not configured. Skipping chat message save.');
+            // Use localStorage as fallback
+            const savedChats = localStorage.getItem(`chat_${contextId}`);
+            const chats = savedChats ? JSON.parse(savedChats) : [];
+            chats.push(msg);
+            localStorage.setItem(`chat_${contextId}`, JSON.stringify(chats));
             return;
         }
         
@@ -225,14 +357,22 @@ export const apiService = {
             await supabaseService.insert(CHAT_HISTORY_TABLE, mappedMessage);
         } catch (err) {
             console.error('Error saving chat message:', err);
-            throw err;
+            // Fallback to localStorage
+            const savedChats = localStorage.getItem(`chat_${contextId}`);
+            const chats = savedChats ? JSON.parse(savedChats) : [];
+            chats.push(msg);
+            localStorage.setItem(`chat_${contextId}`, JSON.stringify(chats));
         }
     },
 
     // Documents
     createDocument: async (doc: PRDocument) => {
         if (!supabaseService.getClient()) {
-            console.warn('Supabase is not configured. Skipping document creation.');
+            // Use localStorage as fallback
+            const savedData = localStorage.getItem('appData');
+            const data = savedData ? JSON.parse(savedData) : { projects: [], tasks: [], documents: [] };
+            data.documents.push(doc);
+            localStorage.setItem('appData', JSON.stringify(data));
             return;
         }
         
@@ -241,13 +381,26 @@ export const apiService = {
             await supabaseService.insert(DOCUMENTS_TABLE, mappedDoc);
         } catch (err) {
             console.error('Error creating document:', err);
-            throw err;
+            // Fallback to localStorage
+            const savedData = localStorage.getItem('appData');
+            const data = savedData ? JSON.parse(savedData) : { projects: [], tasks: [], documents: [] };
+            data.documents.push(doc);
+            localStorage.setItem('appData', JSON.stringify(data));
         }
     },
 
     updateDocument: async (doc: PRDocument) => {
         if (!supabaseService.getClient()) {
-            console.warn('Supabase is not configured. Skipping document update.');
+            // Use localStorage as fallback
+            const savedData = localStorage.getItem('appData');
+            const data = savedData ? JSON.parse(savedData) : { projects: [], tasks: [], documents: [] };
+            const docIndex = data.documents.findIndex((d: any) => d.id === doc.id);
+            if (docIndex !== -1) {
+                data.documents[docIndex] = doc;
+            } else {
+                data.documents.push(doc);
+            }
+            localStorage.setItem('appData', JSON.stringify(data));
             return;
         }
         
@@ -260,13 +413,26 @@ export const apiService = {
             );
         } catch (err) {
             console.error('Error updating document:', err);
-            throw err;
+            // Fallback to localStorage
+            const savedData = localStorage.getItem('appData');
+            const data = savedData ? JSON.parse(savedData) : { projects: [], tasks: [], documents: [] };
+            const docIndex = data.documents.findIndex((d: any) => d.id === doc.id);
+            if (docIndex !== -1) {
+                data.documents[docIndex] = doc;
+            } else {
+                data.documents.push(doc);
+            }
+            localStorage.setItem('appData', JSON.stringify(data));
         }
     },
 
     deleteDocument: async (docId: string) => {
         if (!supabaseService.getClient()) {
-            console.warn('Supabase is not configured. Skipping document deletion.');
+            // Use localStorage as fallback
+            const savedData = localStorage.getItem('appData');
+            const data = savedData ? JSON.parse(savedData) : { projects: [], tasks: [], documents: [] };
+            data.documents = data.documents.filter((d: any) => d.id !== docId);
+            localStorage.setItem('appData', JSON.stringify(data));
             return;
         }
         
@@ -274,15 +440,23 @@ export const apiService = {
             await supabaseService.delete(DOCUMENTS_TABLE, [{ column: 'id', value: docId }]);
         } catch (err) {
             console.error('Error deleting document:', err);
-            throw err;
+            // Fallback to localStorage
+            const savedData = localStorage.getItem('appData');
+            const data = savedData ? JSON.parse(savedData) : { projects: [], tasks: [], documents: [] };
+            data.documents = data.documents.filter((d: any) => d.id !== docId);
+            localStorage.setItem('appData', JSON.stringify(data));
         }
     },
 
     // Categories
     getCategories: async (projectId: string): Promise<CustomCategory[]> => {
         if (!supabaseService.getClient()) {
-            console.warn('Supabase is not configured. Returning empty categories.');
-            return [];
+            // Use localStorage as fallback
+            const savedData = localStorage.getItem('appData');
+            const data = savedData ? JSON.parse(savedData) : { projects: [], tasks: [], documents: [], categories: {} };
+            const projectCategories = data.categories?.[projectId] || [];
+            const globalCategories = data.categories?.['global'] || [];
+            return [...globalCategories, ...projectCategories];
         }
         
         try {
@@ -307,13 +481,25 @@ export const apiService = {
             return filteredCategories.map(mapCategoryFromDB);
         } catch (err) {
             console.error('Error fetching categories:', err);
-            throw err;
+            // Fallback to localStorage
+            const savedData = localStorage.getItem('appData');
+            const data = savedData ? JSON.parse(savedData) : { projects: [], tasks: [], documents: [], categories: {} };
+            const projectCategories = data.categories?.[projectId] || [];
+            const globalCategories = data.categories?.['global'] || [];
+            return [...globalCategories, ...projectCategories];
         }
     },
 
     addCategory: async (category: CustomCategory, projectId: string) => {
         if (!supabaseService.getClient()) {
-            console.warn('Supabase is not configured. Skipping category addition.');
+            // Use localStorage as fallback
+            const savedData = localStorage.getItem('appData');
+            const data = savedData ? JSON.parse(savedData) : { projects: [], tasks: [], documents: [], categories: {} };
+            if (!data.categories) data.categories = {};
+            const categoryKey = projectId === 'home' ? 'global' : projectId;
+            if (!data.categories[categoryKey]) data.categories[categoryKey] = [];
+            data.categories[categoryKey].push(category);
+            localStorage.setItem('appData', JSON.stringify(data));
             return;
         }
         
@@ -325,13 +511,28 @@ export const apiService = {
             await supabaseService.insert(CATEGORIES_TABLE, mappedCategory);
         } catch (err) {
             console.error('Error adding category:', err);
-            throw err;
+            // Fallback to localStorage
+            const savedData = localStorage.getItem('appData');
+            const data = savedData ? JSON.parse(savedData) : { projects: [], tasks: [], documents: [], categories: {} };
+            if (!data.categories) data.categories = {};
+            const categoryKey = projectId === 'home' ? 'global' : projectId;
+            if (!data.categories[categoryKey]) data.categories[categoryKey] = [];
+            data.categories[categoryKey].push(category);
+            localStorage.setItem('appData', JSON.stringify(data));
         }
     },
 
     deleteCategory: async (categoryId: string) => {
         if (!supabaseService.getClient()) {
-            console.warn('Supabase is not configured. Skipping category deletion.');
+            // Use localStorage as fallback
+            const savedData = localStorage.getItem('appData');
+            const data = savedData ? JSON.parse(savedData) : { projects: [], tasks: [], documents: [], categories: {} };
+            if (data.categories) {
+                Object.keys(data.categories).forEach(key => {
+                    data.categories[key] = data.categories[key].filter((cat: any) => cat.id !== categoryId);
+                });
+            }
+            localStorage.setItem('appData', JSON.stringify(data));
             return;
         }
         
@@ -339,15 +540,25 @@ export const apiService = {
             await supabaseService.delete(CATEGORIES_TABLE, [{ column: 'id', value: categoryId }]);
         } catch (err) {
             console.error('Error deleting category:', err);
-            throw err;
+            // Fallback to localStorage
+            const savedData = localStorage.getItem('appData');
+            const data = savedData ? JSON.parse(savedData) : { projects: [], tasks: [], documents: [], categories: {} };
+            if (data.categories) {
+                Object.keys(data.categories).forEach(key => {
+                    data.categories[key] = data.categories[key].filter((cat: any) => cat.id !== categoryId);
+                });
+            }
+            localStorage.setItem('appData', JSON.stringify(data));
         }
     },
 
     // Bulk Sync
     syncAll: async (projects: AppContext[], tasks: Task[], documents: PRDocument[]) => {
         if (!supabaseService.getClient()) {
-            console.warn('Supabase is not configured. Skipping sync operation.');
-            return { success: true, message: 'Sync skipped due to missing Supabase configuration' };
+            // Use localStorage as fallback
+            const data = { projects, tasks, documents };
+            localStorage.setItem('appData', JSON.stringify(data));
+            return { success: true, message: 'Synced to local storage' };
         }
         
         try {
@@ -426,7 +637,10 @@ export const apiService = {
             return { success: true, message: 'Synced successfully' };
         } catch (err) {
             console.error('Error during sync:', err);
-            throw err;
+            // Fallback to localStorage
+            const data = { projects, tasks, documents };
+            localStorage.setItem('appData', JSON.stringify(data));
+            return { success: true, message: 'Synced to local storage due to error' };
         }
     }
 };

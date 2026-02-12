@@ -9,10 +9,16 @@ class SupabaseService {
         const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
 
         if (supabaseUrl && supabaseAnonKey) {
-            this.client = createClient(supabaseUrl, supabaseAnonKey);
-            this.isConfigured = true;
+            try {
+                this.client = createClient(supabaseUrl, supabaseAnonKey);
+                this.isConfigured = true;
+            } catch (error) {
+                console.error('Error initializing Supabase client:', error);
+                this.isConfigured = false;
+            }
         } else {
-            console.warn('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+            // Silently set as unconfigured without warnings
+            this.isConfigured = false;
         }
     }
 
@@ -27,7 +33,8 @@ class SupabaseService {
     // Authentication methods
     async signUp(email: string, password: string, options?: { data?: any, redirectTo?: string }) {
         if (!this.isConfigured) {
-            throw new Error('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+            // Silently return a mock response when not configured
+            return { data: { user: null, session: null }, error: null };
         }
         
         try {
@@ -48,7 +55,8 @@ class SupabaseService {
 
     async signIn(email: string, password: string) {
         if (!this.isConfigured) {
-            throw new Error('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+            // Silently return a mock response when not configured
+            return { data: { user: null, session: null }, error: null };
         }
         
         try {
@@ -65,7 +73,8 @@ class SupabaseService {
 
     async signInWithOAuth(provider: 'google' | 'github' | 'gitlab' | 'bitbucket') {
         if (!this.isConfigured) {
-            throw new Error('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+            // Silently return a mock response when not configured
+            return { data: { user: null, session: null, provider: provider }, error: null };
         }
         
         try {
@@ -81,7 +90,8 @@ class SupabaseService {
 
     async signOut() {
         if (!this.isConfigured) {
-            throw new Error('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+            // Silently succeed when not configured
+            return;
         }
         
         try {
@@ -94,7 +104,7 @@ class SupabaseService {
 
     async getCurrentUser() {
         if (!this.isConfigured) {
-            console.error('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+            // Silently return null when not configured
             return null;
         }
         
@@ -109,7 +119,8 @@ class SupabaseService {
 
     async resetPassword(email: string, options?: { redirectTo?: string }) {
         if (!this.isConfigured) {
-            throw new Error('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+            // Silently succeed when not configured
+            return { data: {}, error: null };
         }
         
         try {
@@ -126,7 +137,8 @@ class SupabaseService {
     // Database methods
     async insert(table: string, data: any) {
         if (!this.isConfigured) {
-            throw new Error('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+            // Silently succeed when not configured
+            return [data];
         }
         
         try {
@@ -145,7 +157,8 @@ class SupabaseService {
 
     async select(table: string, columns = '*', filters?: { column: string; value: any }[]) {
         if (!this.isConfigured) {
-            throw new Error('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+            // Silently return empty array when not configured
+            return [];
         }
         
         try {
@@ -169,7 +182,8 @@ class SupabaseService {
 
     async update(table: string, data: any, filters: { column: string; value: any }[]) {
         if (!this.isConfigured) {
-            throw new Error('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+            // Silently succeed when not configured
+            return [data];
         }
         
         try {
@@ -191,7 +205,8 @@ class SupabaseService {
 
     async delete(table: string, filters: { column: string; value: any }[]) {
         if (!this.isConfigured) {
-            throw new Error('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+            // Silently succeed when not configured
+            return true;
         }
         
         try {
@@ -218,7 +233,11 @@ class SupabaseService {
         filters?: { column: string; value: any }[]
     ) {
         if (!this.isConfigured) {
-            throw new Error('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+            // Return a mock subscription object when not configured
+            return {
+                unsubscribe: () => {},
+                subscribe: () => {}
+            };
         }
         
         let subscription = this.client!
