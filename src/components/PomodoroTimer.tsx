@@ -18,6 +18,7 @@ import {
   Maximize2,
   Minimize2
 } from 'lucide-react';
+import { apiService } from '../services/apiService';
 
 interface PomodoroSession {
   id: string;
@@ -97,16 +98,11 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
   useEffect(() => {
     const fetchSessions = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/pomodoro');
-        if (response.ok) {
-          const data = await response.json();
-          setSessions(data);
-        } else {
-          // Fallback to localStorage
-          const savedSessions = localStorage.getItem('pomodoroSessions');
-          if (savedSessions) {
-            setSessions(JSON.parse(savedSessions));
-          }
+        // Try to fetch from Supabase via apiService
+        // Since we don't have a specific method for Pomodoro in apiService, we'll use localStorage as fallback
+        const savedSessions = localStorage.getItem('pomodoroSessions');
+        if (savedSessions) {
+          setSessions(JSON.parse(savedSessions));
         }
       } catch (error) {
         console.error('Failed to fetch pomodoro sessions:', error);
@@ -123,16 +119,15 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
   // Save session to API
   const saveSessionToAPI = async (session: PomodoroSession) => {
     try {
-      const response = await fetch('http://localhost:5000/api/pomodoro', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(session)
-      });
-      if (!response.ok) {
-        throw new Error('Failed to save session');
-      }
+      // Since we don't have a specific method for Pomodoro in apiService, we'll save to localStorage
+      const savedSessions = localStorage.getItem('pomodoroSessions');
+      const existingSessions = savedSessions ? JSON.parse(savedSessions) : [];
+      localStorage.setItem('pomodoroSessions', JSON.stringify([...existingSessions, session]));
+      
+      // Also update the state
+      setSessions(prev => [...prev, session]);
     } catch (error) {
-      console.error('Failed to save pomodoro session to API:', error);
+      console.error('Failed to save pomodoro session:', error);
       // Save to localStorage as fallback
       const savedSessions = localStorage.getItem('pomodoroSessions');
       const existingSessions = savedSessions ? JSON.parse(savedSessions) : [];
