@@ -1,0 +1,8 @@
+{
+  "name": "Lahlah OS - AI Personal & Product Assistant",
+  "description": "A sophisticated AI-driven productivity dashboard for Mohamed Lahlah, managing professional engineering, product management, and health contexts with deep strategic insights.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
