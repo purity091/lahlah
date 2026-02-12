@@ -1,4 +1,4 @@
-import { AppContext, Task, PRDocument, Freelancer, ChatMessage, CustomCategory } from '../types';
+import { AppContext, Task, PRDocument, Freelancer, ChatMessage, CustomCategory, Priority, TaskStatus } from '../types';
 import SupabaseService from './SupabaseService';
 
 const supabaseService = new SupabaseService();
@@ -684,7 +684,7 @@ const mapTaskToDB = (task: Task) => ({
     id: task.id,
     title: task.title,
     category: task.category,
-    priority: (task.priority || 'MEDIUM').toUpperCase(), // Ensure uppercase for DB constraint
+    priority: mapAppPriorityToDB(task.priority),
     status: (task.status || 'TODO').replace(' ', '_').toUpperCase(), // Convert 'In Progress' to 'IN_PROGRESS'
     date: task.date,
     suggested_time: task.suggestedTime,
@@ -701,10 +701,8 @@ const mapTaskFromDB = (doc: any): Task => ({
     id: doc.id,
     title: doc.title,
     category: doc.category,
-    category: doc.category,
     priority: mapDBPriorityToApp(doc.priority),
     status: mapDBStatusToApp(doc.status),
-    date: doc.date,
     date: doc.date,
     suggestedTime: doc.suggested_time,
     duration: doc.duration,
