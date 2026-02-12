@@ -1,23 +1,16 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { supabaseClient } from './supabaseClient';
 
 class SupabaseService {
     private client: SupabaseClient | null = null;
     private isConfigured = false;
 
     constructor() {
-        const supabaseUrl = process.env.VITE_SUPABASE_URL;
-        const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
-
-        if (supabaseUrl && supabaseAnonKey) {
-            try {
-                this.client = createClient(supabaseUrl, supabaseAnonKey);
-                this.isConfigured = true;
-            } catch (error) {
-                console.error('Error initializing Supabase client:', error);
-                this.isConfigured = false;
-            }
+        if (supabaseClient) {
+            this.client = supabaseClient;
+            this.isConfigured = true;
         } else {
-            // Silently set as unconfigured without warnings
+            console.warn('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
             this.isConfigured = false;
         }
     }
@@ -36,7 +29,7 @@ class SupabaseService {
             // Silently return a mock response when not configured
             return { data: { user: null, session: null }, error: null };
         }
-        
+
         try {
             const response = await this.client!.auth.signUp({
                 email,
@@ -58,7 +51,7 @@ class SupabaseService {
             // Silently return a mock response when not configured
             return { data: { user: null, session: null }, error: null };
         }
-        
+
         try {
             const response = await this.client!.auth.signInWithPassword({
                 email,
@@ -76,7 +69,7 @@ class SupabaseService {
             // Silently return a mock response when not configured
             return { data: { user: null, session: null, provider: provider }, error: null };
         }
-        
+
         try {
             const response = await this.client!.auth.signInWithOAuth({
                 provider
@@ -93,7 +86,7 @@ class SupabaseService {
             // Silently succeed when not configured
             return;
         }
-        
+
         try {
             await this.client!.auth.signOut();
         } catch (error) {
@@ -107,7 +100,7 @@ class SupabaseService {
             // Silently return null when not configured
             return null;
         }
-        
+
         try {
             const { data: { user } } = await this.client!.auth.getUser();
             return user;
@@ -122,7 +115,7 @@ class SupabaseService {
             // Silently succeed when not configured
             return { data: {}, error: null };
         }
-        
+
         try {
             const response = await this.client!.auth.resetPasswordForEmail(email, {
                 redirectTo: options?.redirectTo
@@ -140,13 +133,13 @@ class SupabaseService {
             // Silently succeed when not configured
             return [data];
         }
-        
+
         try {
             const { data: insertedData, error } = await this.client!
                 .from(table)
                 .insert(data)
                 .select();
-            
+
             if (error) throw error;
             return insertedData;
         } catch (error) {
@@ -160,18 +153,18 @@ class SupabaseService {
             // Silently return empty array when not configured
             return [];
         }
-        
+
         try {
             let query = this.client!.from(table).select(columns);
-            
+
             if (filters && filters.length > 0) {
                 filters.forEach(filter => {
                     query = query.eq(filter.column, filter.value);
                 });
             }
-            
+
             const { data, error } = await query;
-            
+
             if (error) throw error;
             return data;
         } catch (error) {
@@ -185,16 +178,16 @@ class SupabaseService {
             // Silently succeed when not configured
             return [data];
         }
-        
+
         try {
             let query = this.client!.from(table).update(data);
-            
+
             filters.forEach(filter => {
                 query = query.eq(filter.column, filter.value);
             });
-            
+
             const { data: updatedData, error } = await query.select();
-            
+
             if (error) throw error;
             return updatedData;
         } catch (error) {
@@ -208,16 +201,16 @@ class SupabaseService {
             // Silently succeed when not configured
             return true;
         }
-        
+
         try {
             let query = this.client!.from(table).delete();
-            
+
             filters.forEach(filter => {
                 query = query.eq(filter.column, filter.value);
             });
-            
+
             const { error } = await query;
-            
+
             if (error) throw error;
             return true;
         } catch (error) {
@@ -228,18 +221,18 @@ class SupabaseService {
 
     // Realtime subscriptions
     subscribeToTable(
-        table: string, 
+        table: string,
         callback: (payload: any) => void,
         filters?: { column: string; value: any }[]
     ) {
         if (!this.isConfigured) {
             // Return a mock subscription object when not configured
             return {
-                unsubscribe: () => {},
-                subscribe: () => {}
+                unsubscribe: () => { },
+                subscribe: () => { }
             };
         }
-        
+
         let subscription = this.client!
             .channel(`realtime-${table}`)
             .on(

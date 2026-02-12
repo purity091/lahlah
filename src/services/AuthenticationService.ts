@@ -1,4 +1,5 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { supabaseClient } from './supabaseClient';
 import { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 
 interface AuthState {
@@ -22,30 +23,29 @@ class AuthenticationService {
   private listeners: Array<(state: AuthState) => void> = [];
 
   constructor() {
-    const supabaseUrl = process.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
+    // Check if we're in a browser environment
+    if (typeof window === 'undefined') {
+      console.warn('Authentication service initialized outside of browser environment');
+      this.isConfigured = false;
+      this.updateAuthState({
+        ...this.authState,
+        isLoading: false,
+        error: 'Authentication is not available in this environment'
+      });
+      return;
+    }
 
-    if (supabaseUrl && supabaseAnonKey) {
-      try {
-        this.client = createClient(supabaseUrl, supabaseAnonKey);
-        this.isConfigured = true;
-        
-        // Set up auth state listener
-        this.setupAuthListener();
-        
-        // Check initial session
-        this.checkInitialSession();
-      } catch (error) {
-        console.error('Error initializing Supabase client:', error);
-        this.isConfigured = false;
-        this.updateAuthState({
-          ...this.authState,
-          isLoading: false,
-          error: 'Failed to initialize authentication service'
-        });
-      }
+    if (supabaseClient) {
+      this.client = supabaseClient;
+      this.isConfigured = true;
+
+      // Set up auth state listener
+      this.setupAuthListener();
+
+      // Check initial session
+      this.checkInitialSession();
     } else {
-      console.warn('Supabase environment variables not set. Authentication will not work.');
+      console.warn('Supabase is not configured. Authentication will not work.');
       this.isConfigured = false;
       this.updateAuthState({
         ...this.authState,
@@ -58,36 +58,54 @@ class AuthenticationService {
   private setupAuthListener() {
     if (!this.client) return;
 
-    this.client.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
-        const user = session?.user || null;
-        this.updateAuthState({
-          user,
-          session,
-          isAuthenticated: !!user,
-          isLoading: false,
-          error: null
-        });
-      } else if (event === 'SIGNED_OUT') {
-        this.updateAuthState({
-          user: null,
-          session: null,
-          isAuthenticated: false,
-          isLoading: false,
-          error: null
-        });
-      } else if (event === 'PASSWORD_RECOVERY') {
-        // Handle password recovery if needed
-      }
-    });
+    try {
+      this.client.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+          const user = session?.user || null;
+          this.updateAuthState({
+            user,
+            session,
+            isAuthenticated: !!user,
+            isLoading: false,
+            error: null
+          });
+        } else if (event === 'SIGNED_OUT') {
+          this.updateAuthState({
+            user: null,
+            session: null,
+            isAuthenticated: false,
+            isLoading: false,
+            error: null
+          });
+        } else if (event === 'PASSWORD_RECOVERY') {
+          // Handle password recovery if needed
+        }
+      });
+    } catch (error) {
+      console.error('Error setting up auth listener:', error);
+      this.updateAuthState({
+        ...this.authState,
+        error: 'Failed to set up authentication listener'
+      });
+    }
   }
 
   private async checkInitialSession() {
     if (!this.client) return;
 
     try {
+      // Check if we're in a browser environment before attempting to get session
+      if (typeof window === 'undefined') {
+        this.updateAuthState({
+          ...this.authState,
+          isLoading: false,
+          error: 'Authentication is not available in this environment'
+        });
+        return;
+      }
+
       const { data: { session }, error } = await this.client.auth.getSession();
-      
+
       if (error) {
         console.error('Error getting initial session:', error);
         this.updateAuthState({
@@ -108,10 +126,15 @@ class AuthenticationService {
       });
     } catch (error) {
       console.error('Error checking initial session:', error);
+      // Handle the specific DOMException for aborted operations
+      const errorMessage = error instanceof DOMException ?
+        'Authentication initialization failed. Please check your connection and Supabase configuration.' :
+        (error as Error).message;
+
       this.updateAuthState({
         ...this.authState,
         isLoading: false,
-        error: (error as Error).message
+        error: errorMessage
       });
     }
   }
@@ -126,7 +149,7 @@ class AuthenticationService {
     this.listeners.push(callback);
     // Call immediately with current state
     callback(this.authState);
-    
+
     return () => {
       this.listeners = this.listeners.filter(l => l !== callback);
     };
@@ -138,7 +161,12 @@ class AuthenticationService {
 
   public async signUp(email: string, password: string, name?: string) {
     if (!this.isConfigured) {
-      throw new Error('Authentication is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+      const error = new Error('Authentication is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+      this.updateAuthState({
+        ...this.authState,
+        error: error.message
+      });
+      throw error;
     }
 
     try {
@@ -174,9 +202,14 @@ class AuthenticationService {
       return data;
     } catch (error) {
       console.error('Sign up error:', error);
+      // Handle the specific DOMException for aborted operations
+      const errorMessage = error instanceof DOMException ?
+        'Sign up operation failed. Please check your connection and try again.' :
+        (error as Error).message;
+
       this.updateAuthState({
         ...this.authState,
-        error: (error as Error).message
+        error: errorMessage
       });
       throw error;
     }
@@ -184,7 +217,12 @@ class AuthenticationService {
 
   public async signIn(email: string, password: string) {
     if (!this.isConfigured) {
-      throw new Error('Authentication is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+      const error = new Error('Authentication is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+      this.updateAuthState({
+        ...this.authState,
+        error: error.message
+      });
+      throw error;
     }
 
     try {
@@ -215,9 +253,14 @@ class AuthenticationService {
       return data;
     } catch (error) {
       console.error('Sign in error:', error);
+      // Handle the specific DOMException for aborted operations
+      const errorMessage = error instanceof DOMException ?
+        'Sign in operation failed. Please check your connection and try again.' :
+        (error as Error).message;
+
       this.updateAuthState({
         ...this.authState,
-        error: (error as Error).message
+        error: errorMessage
       });
       throw error;
     }
@@ -225,7 +268,12 @@ class AuthenticationService {
 
   public async signInWithGoogle() {
     if (!this.isConfigured) {
-      throw new Error('Authentication is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+      const error = new Error('Authentication is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+      this.updateAuthState({
+        ...this.authState,
+        error: error.message
+      });
+      throw error;
     }
 
     try {
@@ -250,9 +298,14 @@ class AuthenticationService {
       return data;
     } catch (error) {
       console.error('Google sign in error:', error);
+      // Handle the specific DOMException for aborted operations
+      const errorMessage = error instanceof DOMException ?
+        'Google sign in operation failed. Please check your connection and try again.' :
+        (error as Error).message;
+
       this.updateAuthState({
         ...this.authState,
-        error: (error as Error).message
+        error: errorMessage
       });
       throw error;
     }
@@ -276,9 +329,14 @@ class AuthenticationService {
       // State will be updated via the auth listener
     } catch (error) {
       console.error('Sign out error:', error);
+      // Handle the specific DOMException for aborted operations
+      const errorMessage = error instanceof DOMException ?
+        'Sign out operation failed. Please check your connection and try again.' :
+        (error as Error).message;
+
       this.updateAuthState({
         ...this.authState,
-        error: (error as Error).message
+        error: errorMessage
       });
       throw error;
     }
@@ -286,7 +344,12 @@ class AuthenticationService {
 
   public async resetPassword(email: string) {
     if (!this.isConfigured) {
-      throw new Error('Authentication is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+      const error = new Error('Authentication is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+      this.updateAuthState({
+        ...this.authState,
+        error: error.message
+      });
+      throw error;
     }
 
     try {
@@ -305,9 +368,14 @@ class AuthenticationService {
       return { success: true };
     } catch (error) {
       console.error('Reset password error:', error);
+      // Handle the specific DOMException for aborted operations
+      const errorMessage = error instanceof DOMException ?
+        'Password reset operation failed. Please check your connection and try again.' :
+        (error as Error).message;
+
       this.updateAuthState({
         ...this.authState,
-        error: (error as Error).message
+        error: errorMessage
       });
       throw error;
     }
@@ -315,11 +383,21 @@ class AuthenticationService {
 
   public async updateProfile(updates: { full_name?: string; avatar_url?: string }) {
     if (!this.isConfigured) {
-      throw new Error('Authentication is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+      const error = new Error('Authentication is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+      this.updateAuthState({
+        ...this.authState,
+        error: error.message
+      });
+      throw error;
     }
 
     if (!this.authState.user) {
-      throw new Error('User not authenticated');
+      const error = new Error('User not authenticated');
+      this.updateAuthState({
+        ...this.authState,
+        error: error.message
+      });
+      throw error;
     }
 
     try {
@@ -345,9 +423,14 @@ class AuthenticationService {
       return data;
     } catch (error) {
       console.error('Update profile error:', error);
+      // Handle the specific DOMException for aborted operations
+      const errorMessage = error instanceof DOMException ?
+        'Profile update operation failed. Please check your connection and try again.' :
+        (error as Error).message;
+
       this.updateAuthState({
         ...this.authState,
-        error: (error as Error).message
+        error: errorMessage
       });
       throw error;
     }

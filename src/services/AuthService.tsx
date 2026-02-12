@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await authService.signIn(email, password);
     } catch (error) {
       console.error('Login error:', error);
-      throw error;
+      // Don't rethrow the error here as it's already handled by the auth service
     }
   }
 
@@ -47,7 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await authService.signUp(email, password, name);
     } catch (error) {
       console.error('Signup error:', error);
-      throw error;
+      // Don't rethrow the error here as it's already handled by the auth service
     }
   }
 
@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await authService.signInWithGoogle();
     } catch (error) {
       console.error('Google sign-in error:', error);
-      throw error;
+      // Don't rethrow the error here as it's already handled by the auth service
     }
   }
 
@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await authService.signOut();
     } catch (error) {
       console.error('Logout error:', error);
-      throw error;
+      // Don't rethrow the error here as it's already handled by the auth service
     }
   }
 
@@ -74,7 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await authService.resetPassword(email);
     } catch (error) {
       console.error('Reset password error:', error);
-      throw error;
+      // Don't rethrow the error here as it's already handled by the auth service
     }
   }
 
@@ -83,7 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await authService.updateProfile(updates);
     } catch (error) {
       console.error('Update profile error:', error);
-      throw error;
+      // Don't rethrow the error here as it's already handled by the auth service
     }
   }
 
