@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Rocket, TrendingUp, Briefcase, Globe, LineChart, Store, HeartPulse, User,
   Plus, CheckCircle2, Clock, Zap, ChevronLeft, ChevronRight, Settings,
@@ -20,7 +21,7 @@ import { CONTEXTS } from './constants';
 import { AppContext, Task, Priority, TaskStatus, ChatMessage, PRDocument, DiscoveryArtifact, Freelancer, ProjectSector, CustomCategory, DEFAULT_CATEGORIES } from './types';
 import { OpenAIService } from './services/openaiService';
 import { apiService } from './services/apiService';
-import { useAuth } from './services/AuthService';
+import { useAuth } from './services/AuthProvider';
 import * as XLSX from 'xlsx';
 
 const ICON_MAP: Record<string, any> = {
@@ -1355,19 +1356,32 @@ ${upcomingTasks}
         <div className="p-6 border-t border-slate-100">
           <div className="flex items-center gap-4 p-3 bg-slate-50 rounded-2xl border border-slate-200/50">
             <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-xs font-bold shadow-sm overflow-hidden">
-              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Mohamed" alt="User" />
+              {auth.user?.user_metadata?.avatar_url ? (
+                <img src={auth.user.user_metadata.avatar_url} alt="User" />
+              ) : (
+                <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${auth.user?.email || 'user'}`} alt="User" />
+              )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-black text-slate-900 truncate">محمد لحلح</p>
-              <p className="text-[10px] text-slate-400 font-bold uppercase truncate">Software Arch / PM</p>
+              <p className="text-xs font-black text-slate-900 truncate">
+                {auth.user?.user_metadata?.full_name || auth.user?.email?.split('@')[0] || 'User'}
+              </p>
+              <p className="text-[10px] text-slate-400 font-bold uppercase truncate">
+                {auth.user?.email || 'Authenticated User'}
+              </p>
             </div>
-            <button 
-              onClick={() => auth.logout()} 
-              className="p-2 text-slate-400 hover:bg-slate-200 rounded-lg transition-colors"
-              title="تسجيل الخروج"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
+            <div className="flex gap-1">
+              <Link to="/profile" className="p-2 text-slate-400 hover:bg-slate-200 rounded-lg transition-colors" title="الملف الشخصي">
+                <User className="w-4 h-4" />
+              </Link>
+              <button
+                onClick={() => auth.logout()}
+                className="p-2 text-slate-400 hover:bg-slate-200 rounded-lg transition-colors"
+                title="تسجيل الخروج"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       </aside>

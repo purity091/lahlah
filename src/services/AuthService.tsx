@@ -1,15 +1,18 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import SupabaseService from '../services/SupabaseService';
+import AuthenticationService from './AuthenticationService';
 
-const supabaseService = new SupabaseService();
+const authService = new AuthenticationService();
 
 interface AuthContextType {
   user: any;
   loading: boolean;
+  error: string | null;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name?: string) => Promise<void>;
   logout: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  updateProfile: (updates: { full_name?: string; avatar_url?: string }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,56 +26,16 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [authState, setAuthState] = useState(authService.getAuthState());
 
   useEffect(() => {
-    checkUser();
-    
-    // Only set up auth listener if Supabase is configured
-    if (supabaseService.getClient()) {
-      // Listen for auth changes
-      const { data: { subscription } } = supabaseService.getClient()!.auth.onAuthStateChange((_event, session) => {
-        setUser(session?.user || null);
-        setLoading(false);
-      });
-
-      return () => {
-        subscription.unsubscribe();
-      };
-    } else {
-      // If Supabase isn't configured, just set loading to false
-      setLoading(false);
-    }
+    const unsubscribe = authService.subscribe(setAuthState);
+    return () => unsubscribe();
   }, []);
 
-  async function checkUser() {
-    if (!supabaseService.getClient()) {
-      console.warn('Supabase is not configured. Skipping user check.');
-      setLoading(false);
-      return;
-    }
-    
-    try {
-      const currentUser = await supabaseService.getCurrentUser();
-      setUser(currentUser);
-    } catch (error) {
-      console.error('Error checking user:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   async function login(email: string, password: string) {
-    if (!supabaseService.getClient()) {
-      throw new Error('Authentication is not available. Supabase is not configured.');
-    }
-    
     try {
-      const response = await supabaseService.signIn(email, password);
-      const currentUser = await supabaseService.getCurrentUser();
-      setUser(currentUser);
-      return response;
+      await authService.signIn(email, password);
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -80,22 +43,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function signup(email: string, password: string, name?: string) {
-    if (!supabaseService.getClient()) {
-      throw new Error('Authentication is not available. Supabase is not configured.');
-    }
-    
     try {
-      const response = await supabaseService.signUp(email, password, {
-        data: { 
-          full_name: name 
-        }
-      });
-      
-      if (response.user) {
-        setUser(response.user);
-      }
-      
-      return response;
+      await authService.signUp(email, password, name);
     } catch (error) {
       console.error('Signup error:', error);
       throw error;
@@ -103,13 +52,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function signInWithGoogle() {
-    if (!supabaseService.getClient()) {
-      throw new Error('Authentication is not available. Supabase is not configured.');
-    }
-    
     try {
-      const response = await supabaseService.signInWithOAuth('google');
-      return response;
+      await authService.signInWithGoogle();
     } catch (error) {
       console.error('Google sign-in error:', error);
       throw error;
@@ -117,28 +61,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function logout() {
-    if (!supabaseService.getClient()) {
-      console.warn('Supabase is not configured. Skipping logout.');
-      setUser(null);
-      return;
-    }
-    
     try {
-      await supabaseService.signOut();
-      setUser(null);
+      await authService.signOut();
     } catch (error) {
       console.error('Logout error:', error);
       throw error;
     }
   }
 
+  async function resetPassword(email: string) {
+    try {
+      await authService.resetPassword(email);
+    } catch (error) {
+      console.error('Reset password error:', error);
+      throw error;
+    }
+  }
+
+  async function updateProfile(updates: { full_name?: string; avatar_url?: string }) {
+    try {
+      await authService.updateProfile(updates);
+    } catch (error) {
+      console.error('Update profile error:', error);
+      throw error;
+    }
+  }
+
   const value = {
-    user,
-    loading,
+    user: authState.user,
+    loading: authState.isLoading,
+    error: authState.error,
     login,
     signup,
     logout,
-    signInWithGoogle
+    signInWithGoogle,
+    resetPassword,
+    updateProfile
   };
 
   return (
