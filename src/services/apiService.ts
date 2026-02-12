@@ -684,8 +684,8 @@ const mapTaskToDB = (task: Task) => ({
     id: task.id,
     title: task.title,
     category: task.category,
-    priority: task.priority,
-    status: task.status,
+    priority: (task.priority || 'MEDIUM').toUpperCase(), // Ensure uppercase for DB constraint
+    status: (task.status || 'TODO').replace(' ', '_').toUpperCase(), // Convert 'In Progress' to 'IN_PROGRESS'
     date: task.date,
     suggested_time: task.suggestedTime,
     duration: task.duration,
@@ -701,8 +701,10 @@ const mapTaskFromDB = (doc: any): Task => ({
     id: doc.id,
     title: doc.title,
     category: doc.category,
-    priority: doc.priority,
-    status: doc.status,
+    category: doc.category,
+    priority: mapDBPriorityToApp(doc.priority),
+    status: mapDBStatusToApp(doc.status),
+    date: doc.date,
     date: doc.date,
     suggestedTime: doc.suggested_time,
     duration: doc.duration,
@@ -737,7 +739,7 @@ const mapFreelancerToDB = (freelancer: Freelancer) => ({
     name: freelancer.name,
     role: freelancer.role,
     sector: freelancer.sector,
-    status: freelancer.status,
+    status: (freelancer.status || 'Active'), // Ensure it matches 'Active' | 'Paused' | 'Completed'
     rate: freelancer.rate,
     contact: freelancer.contact
 });
@@ -761,7 +763,9 @@ const mapChatMessageFromDB = (doc: any): ChatMessage => ({
 const mapCategoryToDB = (category: CustomCategory) => ({
     id: category.id,
     name: category.name,
-    color: category.color
+    color: category.color,
+    // created_at is handled by default in DB, but if we need to sync it:
+    // created_at: new Date().toISOString() 
 });
 
 const mapCategoryFromDB = (doc: any): CustomCategory => ({
@@ -769,3 +773,24 @@ const mapCategoryFromDB = (doc: any): CustomCategory => ({
     name: doc.name,
     color: doc.color
 });
+
+// Helper functions for Enum mapping
+const mapDBPriorityToApp = (dbPriority: string): Priority => {
+    switch (dbPriority) {
+        case 'HIGH': return Priority.HIGH;
+        case 'MEDIUM': return Priority.MEDIUM;
+        case 'LOW': return Priority.LOW;
+        default: return Priority.MEDIUM;
+    }
+};
+
+const mapDBStatusToApp = (dbStatus: string): TaskStatus => {
+    switch (dbStatus) {
+        case 'DRAFT': return TaskStatus.DRAFT;
+        case 'TODO': return TaskStatus.TODO;
+        case 'IN_PROGRESS': return TaskStatus.IN_PROGRESS;
+        case 'REVIEW': return TaskStatus.REVIEW;
+        case 'DONE': return TaskStatus.DONE;
+        default: return TaskStatus.TODO;
+    }
+};
