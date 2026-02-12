@@ -24,7 +24,7 @@ export const apiService = {
                 }
                 return { projects: [], tasks: [], documents: [] };
             }
-            
+
             // Fetch all projects
             const projects = await supabaseService.select(PROJECTS_TABLE);
             const mappedProjects = projects?.map(mapProjectFromDB) || [];
@@ -69,7 +69,7 @@ export const apiService = {
             localStorage.setItem('appData', JSON.stringify(data));
             return;
         }
-        
+
         try {
             const mappedProject = mapProjectToDB(project);
             await supabaseService.insert(PROJECTS_TABLE, mappedProject);
@@ -97,12 +97,12 @@ export const apiService = {
             localStorage.setItem('appData', JSON.stringify(data));
             return;
         }
-        
+
         try {
             const mappedProject = mapProjectToDB(project);
             await supabaseService.update(
-                PROJECTS_TABLE, 
-                mappedProject, 
+                PROJECTS_TABLE,
+                mappedProject,
                 [{ column: 'id', value: project.id }]
             );
         } catch (err) {
@@ -130,7 +130,7 @@ export const apiService = {
             localStorage.setItem('appData', JSON.stringify(data));
             return;
         }
-        
+
         try {
             const mappedTask = mapTaskToDB(task);
             await supabaseService.insert(TASKS_TABLE, mappedTask);
@@ -158,12 +158,12 @@ export const apiService = {
             localStorage.setItem('appData', JSON.stringify(data));
             return;
         }
-        
+
         try {
             const mappedTask = mapTaskToDB(task);
             await supabaseService.update(
-                TASKS_TABLE, 
-                mappedTask, 
+                TASKS_TABLE,
+                mappedTask,
                 [{ column: 'id', value: task.id }]
             );
         } catch (err) {
@@ -190,7 +190,7 @@ export const apiService = {
             localStorage.setItem('appData', JSON.stringify(data));
             return;
         }
-        
+
         try {
             await supabaseService.delete(TASKS_TABLE, [{ column: 'id', value: taskId }]);
         } catch (err) {
@@ -218,7 +218,7 @@ export const apiService = {
             localStorage.setItem('appData', JSON.stringify(data));
             return;
         }
-        
+
         try {
             const mappedFreelancer = {
                 ...mapFreelancerToDB(freelancer),
@@ -256,15 +256,15 @@ export const apiService = {
             localStorage.setItem('appData', JSON.stringify(data));
             return;
         }
-        
+
         try {
             const mappedFreelancer = {
                 ...mapFreelancerToDB(freelancer),
                 project_id: projectId
             };
             await supabaseService.update(
-                FREELANCERS_TABLE, 
-                mappedFreelancer, 
+                FREELANCERS_TABLE,
+                mappedFreelancer,
                 [{ column: 'id', value: freelancer.id }]
             );
         } catch (err) {
@@ -297,7 +297,7 @@ export const apiService = {
             localStorage.setItem('appData', JSON.stringify(data));
             return;
         }
-        
+
         try {
             await supabaseService.delete(FREELANCERS_TABLE, [{ column: 'id', value: freelancerId }]);
         } catch (err) {
@@ -321,7 +321,7 @@ export const apiService = {
             const savedChats = localStorage.getItem(`chat_${contextId}`);
             return savedChats ? JSON.parse(savedChats) : [];
         }
-        
+
         try {
             const response = await supabaseService.select(
                 CHAT_HISTORY_TABLE,
@@ -346,7 +346,7 @@ export const apiService = {
             localStorage.setItem(`chat_${contextId}`, JSON.stringify(chats));
             return;
         }
-        
+
         try {
             const mappedMessage = {
                 context_id: contextId,
@@ -375,7 +375,7 @@ export const apiService = {
             localStorage.setItem('appData', JSON.stringify(data));
             return;
         }
-        
+
         try {
             const mappedDoc = mapDocumentToDB(doc);
             await supabaseService.insert(DOCUMENTS_TABLE, mappedDoc);
@@ -403,12 +403,12 @@ export const apiService = {
             localStorage.setItem('appData', JSON.stringify(data));
             return;
         }
-        
+
         try {
             const mappedDoc = mapDocumentToDB(doc);
             await supabaseService.update(
-                DOCUMENTS_TABLE, 
-                mappedDoc, 
+                DOCUMENTS_TABLE,
+                mappedDoc,
                 [{ column: 'id', value: doc.id }]
             );
         } catch (err) {
@@ -435,7 +435,7 @@ export const apiService = {
             localStorage.setItem('appData', JSON.stringify(data));
             return;
         }
-        
+
         try {
             await supabaseService.delete(DOCUMENTS_TABLE, [{ column: 'id', value: docId }]);
         } catch (err) {
@@ -458,7 +458,7 @@ export const apiService = {
             const globalCategories = data.categories?.['global'] || [];
             return [...globalCategories, ...projectCategories];
         }
-        
+
         try {
             // Get global categories (project_id IS NULL) OR project specific categories
             let filters = [];
@@ -470,14 +470,14 @@ export const apiService = {
                     { column: 'project_id', value: projectId }
                 ];
             }
-            
+
             // For simplicity, we'll fetch all categories and filter on the client side
             // In a real implementation, you might want to use a more complex query
             const allCategories = await supabaseService.select(CATEGORIES_TABLE);
-            const filteredCategories = allCategories?.filter((cat: any) => 
+            const filteredCategories = allCategories?.filter((cat: any) =>
                 cat.project_id === null || cat.project_id === projectId
             ) || [];
-            
+
             return filteredCategories.map(mapCategoryFromDB);
         } catch (err) {
             console.error('Error fetching categories:', err);
@@ -502,7 +502,7 @@ export const apiService = {
             localStorage.setItem('appData', JSON.stringify(data));
             return;
         }
-        
+
         try {
             const mappedCategory = {
                 ...mapCategoryToDB(category),
@@ -535,7 +535,7 @@ export const apiService = {
             localStorage.setItem('appData', JSON.stringify(data));
             return;
         }
-        
+
         try {
             await supabaseService.delete(CATEGORIES_TABLE, [{ column: 'id', value: categoryId }]);
         } catch (err) {
@@ -560,18 +560,18 @@ export const apiService = {
             localStorage.setItem('appData', JSON.stringify(data));
             return { success: true, message: 'Synced to local storage' };
         }
-        
+
         try {
             // Update projects
             for (const project of projects) {
                 try {
                     const mappedProject = mapProjectToDB(project);
                     const result = await supabaseService.update(
-                        PROJECTS_TABLE, 
-                        mappedProject, 
+                        PROJECTS_TABLE,
+                        mappedProject,
                         [{ column: 'id', value: project.id }]
                     );
-                    
+
                     // If no rows were updated, try inserting
                     if (!result || result.length === 0) {
                         await supabaseService.insert(PROJECTS_TABLE, mapProjectToDB(project));
@@ -591,11 +591,11 @@ export const apiService = {
                 try {
                     const mappedTask = mapTaskToDB(task);
                     const result = await supabaseService.update(
-                        TASKS_TABLE, 
-                        mappedTask, 
+                        TASKS_TABLE,
+                        mappedTask,
                         [{ column: 'id', value: task.id }]
                     );
-                    
+
                     // If no rows were updated, try inserting
                     if (!result || result.length === 0) {
                         await supabaseService.insert(TASKS_TABLE, mapTaskToDB(task));
@@ -615,11 +615,11 @@ export const apiService = {
                 try {
                     const mappedDoc = mapDocumentToDB(document);
                     const result = await supabaseService.update(
-                        DOCUMENTS_TABLE, 
-                        mappedDoc, 
+                        DOCUMENTS_TABLE,
+                        mappedDoc,
                         [{ column: 'id', value: document.id }]
                     );
-                    
+
                     // If no rows were updated, try inserting
                     if (!result || result.length === 0) {
                         await supabaseService.insert(DOCUMENTS_TABLE, mapDocumentToDB(document));
@@ -692,7 +692,7 @@ const mapTaskToDB = (task: Task) => ({
     rationale: task.rationale,
     project_id: task.contextId,
     completed: task.completed,
-    created_at: task.createdAt,
+    created_at: task.createdAt ? new Date(task.createdAt).toISOString() : new Date().toISOString(),
     rice_score: task.rice || {},
     freelancer_id: task.freelancerId
 });
@@ -709,7 +709,7 @@ const mapTaskFromDB = (doc: any): Task => ({
     rationale: doc.rationale,
     contextId: doc.project_id,
     completed: doc.completed,
-    createdAt: doc.created_at,
+    createdAt: doc.created_at ? new Date(doc.created_at).getTime() : 0,
     rice: doc.rice_score || {},
     freelancerId: doc.freelancer_id
 });
@@ -720,7 +720,7 @@ const mapDocumentToDB = (doc: PRDocument) => ({
     type: doc.type,
     content: doc.content,
     context_id: doc.contextId,
-    created_at: doc.createdAt
+    created_at: doc.createdAt ? new Date(doc.createdAt).toISOString() : new Date().toISOString()
 });
 
 const mapDocumentFromDB = (doc: any): PRDocument => ({
@@ -729,7 +729,7 @@ const mapDocumentFromDB = (doc: any): PRDocument => ({
     type: doc.type,
     content: doc.content,
     contextId: doc.context_id,
-    createdAt: doc.created_at
+    createdAt: doc.created_at ? new Date(doc.created_at).getTime() : 0
 });
 
 const mapFreelancerToDB = (freelancer: Freelancer) => ({
