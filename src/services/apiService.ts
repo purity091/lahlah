@@ -792,3 +792,27 @@ const mapDBStatusToApp = (dbStatus: string): TaskStatus => {
         default: return TaskStatus.TODO;
     }
 };
+
+const mapAppPriorityToDB = (priority: string | Priority): string => {
+    // Check if it's already a clean English enum value
+    if (!priority) return 'MEDIUM';
+
+    // Handle both string and Priority enum (which is stored as string 'High', 'Medium', 'Low')
+    const p = priority.toString().trim().toUpperCase();
+
+    // Direct matches
+    if (['HIGH', 'MEDIUM', 'LOW'].includes(p)) return p;
+
+    // Arabic matches
+    if (p.includes('عال') || p.includes('عالية') || p.includes('مرتفع')) return 'HIGH';
+    if (p.includes('متوسط') || p.includes('عادي')) return 'MEDIUM';
+    if (p.includes('منخفض') || p.includes('قليل')) return 'LOW';
+
+    // Fallback for English Enum values (High -> HIGH)
+    if (p === 'HIGH') return 'HIGH';
+    if (p === 'MEDIUM') return 'MEDIUM';
+    if (p === 'LOW') return 'LOW';
+
+    // Default
+    return 'MEDIUM';
+};
