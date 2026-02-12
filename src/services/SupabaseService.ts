@@ -1,23 +1,37 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 class SupabaseService {
-    private client: SupabaseClient;
+    private client: SupabaseClient | null = null;
+    private isConfigured = false;
 
     constructor() {
-        this.client = createClient(
-            process.env.VITE_SUPABASE_URL || '', // Replace with your Supabase URL
-            process.env.VITE_SUPABASE_ANON_KEY || '' // Replace with your Supabase anon key
-        );
+        const supabaseUrl = process.env.VITE_SUPABASE_URL;
+        const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
+
+        if (supabaseUrl && supabaseAnonKey) {
+            this.client = createClient(supabaseUrl, supabaseAnonKey);
+            this.isConfigured = true;
+        } else {
+            console.warn('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+        }
     }
 
-    getClient(): SupabaseClient {
+    getClient(): SupabaseClient | null {
+        if (!this.isConfigured) {
+            console.error('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+            return null;
+        }
         return this.client;
     }
 
     // Authentication methods
     async signUp(email: string, password: string, options?: { data?: any, redirectTo?: string }) {
+        if (!this.isConfigured) {
+            throw new Error('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+        }
+        
         try {
-            const response = await this.client.auth.signUp({
+            const response = await this.client!.auth.signUp({
                 email,
                 password,
                 options: {
@@ -33,8 +47,12 @@ class SupabaseService {
     }
 
     async signIn(email: string, password: string) {
+        if (!this.isConfigured) {
+            throw new Error('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+        }
+        
         try {
-            const response = await this.client.auth.signInWithPassword({
+            const response = await this.client!.auth.signInWithPassword({
                 email,
                 password
             });
@@ -46,8 +64,12 @@ class SupabaseService {
     }
 
     async signInWithOAuth(provider: 'google' | 'github' | 'gitlab' | 'bitbucket') {
+        if (!this.isConfigured) {
+            throw new Error('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+        }
+        
         try {
-            const response = await this.client.auth.signInWithOAuth({
+            const response = await this.client!.auth.signInWithOAuth({
                 provider
             });
             return response;
@@ -58,8 +80,12 @@ class SupabaseService {
     }
 
     async signOut() {
+        if (!this.isConfigured) {
+            throw new Error('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+        }
+        
         try {
-            await this.client.auth.signOut();
+            await this.client!.auth.signOut();
         } catch (error) {
             console.error('Error signing out:', error);
             throw error;
@@ -67,8 +93,13 @@ class SupabaseService {
     }
 
     async getCurrentUser() {
+        if (!this.isConfigured) {
+            console.error('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+            return null;
+        }
+        
         try {
-            const { data: { user } } = await this.client.auth.getUser();
+            const { data: { user } } = await this.client!.auth.getUser();
             return user;
         } catch (error) {
             console.error('Error getting current user:', error);
@@ -77,8 +108,12 @@ class SupabaseService {
     }
 
     async resetPassword(email: string, options?: { redirectTo?: string }) {
+        if (!this.isConfigured) {
+            throw new Error('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+        }
+        
         try {
-            const response = await this.client.auth.resetPasswordForEmail(email, {
+            const response = await this.client!.auth.resetPasswordForEmail(email, {
                 redirectTo: options?.redirectTo
             });
             return response;
@@ -90,8 +125,12 @@ class SupabaseService {
 
     // Database methods
     async insert(table: string, data: any) {
+        if (!this.isConfigured) {
+            throw new Error('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+        }
+        
         try {
-            const { data: insertedData, error } = await this.client
+            const { data: insertedData, error } = await this.client!
                 .from(table)
                 .insert(data)
                 .select();
@@ -105,8 +144,12 @@ class SupabaseService {
     }
 
     async select(table: string, columns = '*', filters?: { column: string; value: any }[]) {
+        if (!this.isConfigured) {
+            throw new Error('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+        }
+        
         try {
-            let query = this.client.from(table).select(columns);
+            let query = this.client!.from(table).select(columns);
             
             if (filters && filters.length > 0) {
                 filters.forEach(filter => {
@@ -125,8 +168,12 @@ class SupabaseService {
     }
 
     async update(table: string, data: any, filters: { column: string; value: any }[]) {
+        if (!this.isConfigured) {
+            throw new Error('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+        }
+        
         try {
-            let query = this.client.from(table).update(data);
+            let query = this.client!.from(table).update(data);
             
             filters.forEach(filter => {
                 query = query.eq(filter.column, filter.value);
@@ -143,8 +190,12 @@ class SupabaseService {
     }
 
     async delete(table: string, filters: { column: string; value: any }[]) {
+        if (!this.isConfigured) {
+            throw new Error('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+        }
+        
         try {
-            let query = this.client.from(table).delete();
+            let query = this.client!.from(table).delete();
             
             filters.forEach(filter => {
                 query = query.eq(filter.column, filter.value);
@@ -166,7 +217,11 @@ class SupabaseService {
         callback: (payload: any) => void,
         filters?: { column: string; value: any }[]
     ) {
-        let subscription = this.client
+        if (!this.isConfigured) {
+            throw new Error('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+        }
+        
+        let subscription = this.client!
             .channel(`realtime-${table}`)
             .on(
                 'postgres_changes',

@@ -29,18 +29,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     checkUser();
     
-    // Listen for auth changes
-    const { data: { subscription } } = supabaseService.getClient().auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
-      setLoading(false);
-    });
+    // Only set up auth listener if Supabase is configured
+    if (supabaseService.getClient()) {
+      // Listen for auth changes
+      const { data: { subscription } } = supabaseService.getClient()!.auth.onAuthStateChange((_event, session) => {
+        setUser(session?.user || null);
+        setLoading(false);
+      });
 
-    return () => {
-      subscription.unsubscribe();
-    };
+      return () => {
+        subscription.unsubscribe();
+      };
+    } else {
+      // If Supabase isn't configured, just set loading to false
+      setLoading(false);
+    }
   }, []);
 
   async function checkUser() {
+    if (!supabaseService.getClient()) {
+      console.warn('Supabase is not configured. Skipping user check.');
+      setLoading(false);
+      return;
+    }
+    
     try {
       const currentUser = await supabaseService.getCurrentUser();
       setUser(currentUser);
@@ -52,6 +64,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function login(email: string, password: string) {
+    if (!supabaseService.getClient()) {
+      throw new Error('Authentication is not available. Supabase is not configured.');
+    }
+    
     try {
       const response = await supabaseService.signIn(email, password);
       const currentUser = await supabaseService.getCurrentUser();
@@ -64,6 +80,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function signup(email: string, password: string, name?: string) {
+    if (!supabaseService.getClient()) {
+      throw new Error('Authentication is not available. Supabase is not configured.');
+    }
+    
     try {
       const response = await supabaseService.signUp(email, password, {
         data: { 
@@ -83,6 +103,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function signInWithGoogle() {
+    if (!supabaseService.getClient()) {
+      throw new Error('Authentication is not available. Supabase is not configured.');
+    }
+    
     try {
       const response = await supabaseService.signInWithOAuth('google');
       return response;
@@ -93,6 +117,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function logout() {
+    if (!supabaseService.getClient()) {
+      console.warn('Supabase is not configured. Skipping logout.');
+      setUser(null);
+      return;
+    }
+    
     try {
       await supabaseService.signOut();
       setUser(null);

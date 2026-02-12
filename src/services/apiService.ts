@@ -15,6 +15,12 @@ export const apiService = {
     // Load all initial data
     fetchInitialData: async () => {
         try {
+            // Check if Supabase is configured
+            if (!supabaseService.getClient()) {
+                console.warn('Supabase is not configured. Returning empty data.');
+                return { projects: [], tasks: [], documents: [] };
+            }
+            
             // Fetch all projects
             const projects = await supabaseService.select(PROJECTS_TABLE);
             const mappedProjects = projects?.map(mapProjectFromDB) || [];
@@ -46,6 +52,11 @@ export const apiService = {
 
     // Projects
     createProject: async (project: AppContext) => {
+        if (!supabaseService.getClient()) {
+            console.warn('Supabase is not configured. Skipping project creation.');
+            return;
+        }
+        
         try {
             const mappedProject = mapProjectToDB(project);
             await supabaseService.insert(PROJECTS_TABLE, mappedProject);
@@ -56,6 +67,11 @@ export const apiService = {
     },
 
     updateProject: async (project: AppContext) => {
+        if (!supabaseService.getClient()) {
+            console.warn('Supabase is not configured. Skipping project update.');
+            return;
+        }
+        
         try {
             const mappedProject = mapProjectToDB(project);
             await supabaseService.update(
@@ -71,6 +87,11 @@ export const apiService = {
 
     // Tasks
     createTask: async (task: Task) => {
+        if (!supabaseService.getClient()) {
+            console.warn('Supabase is not configured. Skipping task creation.');
+            return;
+        }
+        
         try {
             const mappedTask = mapTaskToDB(task);
             await supabaseService.insert(TASKS_TABLE, mappedTask);
@@ -81,6 +102,11 @@ export const apiService = {
     },
 
     updateTask: async (task: Task) => {
+        if (!supabaseService.getClient()) {
+            console.warn('Supabase is not configured. Skipping task update.');
+            return;
+        }
+        
         try {
             const mappedTask = mapTaskToDB(task);
             await supabaseService.update(
@@ -95,6 +121,11 @@ export const apiService = {
     },
 
     deleteTask: async (taskId: string) => {
+        if (!supabaseService.getClient()) {
+            console.warn('Supabase is not configured. Skipping task deletion.');
+            return;
+        }
+        
         try {
             await supabaseService.delete(TASKS_TABLE, [{ column: 'id', value: taskId }]);
         } catch (err) {
@@ -105,6 +136,11 @@ export const apiService = {
 
     // Freelancers
     addFreelancer: async (freelancer: Freelancer, projectId: string) => {
+        if (!supabaseService.getClient()) {
+            console.warn('Supabase is not configured. Skipping freelancer addition.');
+            return;
+        }
+        
         try {
             const mappedFreelancer = {
                 ...mapFreelancerToDB(freelancer),
@@ -118,6 +154,11 @@ export const apiService = {
     },
 
     updateFreelancer: async (freelancer: Freelancer, projectId: string) => {
+        if (!supabaseService.getClient()) {
+            console.warn('Supabase is not configured. Skipping freelancer update.');
+            return;
+        }
+        
         try {
             const mappedFreelancer = {
                 ...mapFreelancerToDB(freelancer),
@@ -135,6 +176,11 @@ export const apiService = {
     },
 
     deleteFreelancer: async (freelancerId: string, projectId: string) => {
+        if (!supabaseService.getClient()) {
+            console.warn('Supabase is not configured. Skipping freelancer deletion.');
+            return;
+        }
+        
         try {
             await supabaseService.delete(FREELANCERS_TABLE, [{ column: 'id', value: freelancerId }]);
         } catch (err) {
@@ -145,6 +191,11 @@ export const apiService = {
 
     // Chat
     fetchChatHistory: async (contextId: string) => {
+        if (!supabaseService.getClient()) {
+            console.warn('Supabase is not configured. Returning empty chat history.');
+            return [];
+        }
+        
         try {
             const response = await supabaseService.select(
                 CHAT_HISTORY_TABLE,
@@ -159,6 +210,11 @@ export const apiService = {
     },
 
     saveChatMessage: async (contextId: string, msg: ChatMessage) => {
+        if (!supabaseService.getClient()) {
+            console.warn('Supabase is not configured. Skipping chat message save.');
+            return;
+        }
+        
         try {
             const mappedMessage = {
                 context_id: contextId,
@@ -175,6 +231,11 @@ export const apiService = {
 
     // Documents
     createDocument: async (doc: PRDocument) => {
+        if (!supabaseService.getClient()) {
+            console.warn('Supabase is not configured. Skipping document creation.');
+            return;
+        }
+        
         try {
             const mappedDoc = mapDocumentToDB(doc);
             await supabaseService.insert(DOCUMENTS_TABLE, mappedDoc);
@@ -185,6 +246,11 @@ export const apiService = {
     },
 
     updateDocument: async (doc: PRDocument) => {
+        if (!supabaseService.getClient()) {
+            console.warn('Supabase is not configured. Skipping document update.');
+            return;
+        }
+        
         try {
             const mappedDoc = mapDocumentToDB(doc);
             await supabaseService.update(
@@ -199,6 +265,11 @@ export const apiService = {
     },
 
     deleteDocument: async (docId: string) => {
+        if (!supabaseService.getClient()) {
+            console.warn('Supabase is not configured. Skipping document deletion.');
+            return;
+        }
+        
         try {
             await supabaseService.delete(DOCUMENTS_TABLE, [{ column: 'id', value: docId }]);
         } catch (err) {
@@ -209,6 +280,11 @@ export const apiService = {
 
     // Categories
     getCategories: async (projectId: string): Promise<CustomCategory[]> => {
+        if (!supabaseService.getClient()) {
+            console.warn('Supabase is not configured. Returning empty categories.');
+            return [];
+        }
+        
         try {
             // Get global categories (project_id IS NULL) OR project specific categories
             let filters = [];
@@ -236,6 +312,11 @@ export const apiService = {
     },
 
     addCategory: async (category: CustomCategory, projectId: string) => {
+        if (!supabaseService.getClient()) {
+            console.warn('Supabase is not configured. Skipping category addition.');
+            return;
+        }
+        
         try {
             const mappedCategory = {
                 ...mapCategoryToDB(category),
@@ -249,6 +330,11 @@ export const apiService = {
     },
 
     deleteCategory: async (categoryId: string) => {
+        if (!supabaseService.getClient()) {
+            console.warn('Supabase is not configured. Skipping category deletion.');
+            return;
+        }
+        
         try {
             await supabaseService.delete(CATEGORIES_TABLE, [{ column: 'id', value: categoryId }]);
         } catch (err) {
@@ -259,6 +345,11 @@ export const apiService = {
 
     // Bulk Sync
     syncAll: async (projects: AppContext[], tasks: Task[], documents: PRDocument[]) => {
+        if (!supabaseService.getClient()) {
+            console.warn('Supabase is not configured. Skipping sync operation.');
+            return { success: true, message: 'Sync skipped due to missing Supabase configuration' };
+        }
+        
         try {
             // Update projects
             for (const project of projects) {
